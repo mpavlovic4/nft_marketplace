@@ -7,7 +7,7 @@ contract NFT is ERC721URIStorage {
     // Solidity will automatically initialize this state variable to default value for uint, which is 0
     uint public tokenCount;
 
-    constructor() ERC721("DApp NFT", "DAAP") {}
+    constructor() ERC721("DApp NFT", "DAPP") {}
 
     function mint(string memory _tokenURI) external returns(uint) {
         _safeMint(msg.sender, ++tokenCount);
