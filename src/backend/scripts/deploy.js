@@ -2,6 +2,7 @@
 
 const NFT_CONTRACT_NAME = "NFT";
 const MARKETPLACE_CONTRACT_NAME = "Marketplace";
+const MARKETPLACE_FEE_PERCENTAGE = 1;
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -13,7 +14,7 @@ async function main() {
   const NFT = await ethers.getContractFactory(NFT_CONTRACT_NAME);
   const nft = await NFT.deploy();
   const Marketplace = await ethers.getContractFactory(MARKETPLACE_CONTRACT_NAME);
-  const marketplace = await Marketplace.deploy(1);
+  const marketplace = await Marketplace.deploy(MARKETPLACE_FEE_PERCENTAGE);
 
   console.log("NFT contract address", nft.address);
   console.log("Marketplace contract address", marketplace.address);
