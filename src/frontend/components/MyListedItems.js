@@ -27,35 +27,61 @@ export default function MyListedItems({ marketplace, nft, account }) {
   const [listedItems, setListedItems] = useState([]);
   const [soldItems, setSoldItems] = useState([]);
 
+  // Load all sold items that the user listed
   const loadListedItems = async () => {
-    // Load all sold items that the user listed
-    const itemCount = await marketplace.itemCount();
     let listedItems = [];
     let soldItems = [];
-    for (let indx = 1; indx <= itemCount; indx++) {
-      const i = await marketplace.items(indx);
-      if (i.seller.toLowerCase() === account) {
-        // get uri url from nft contract
+
+    // SOLUTION 1 - get marketplace items list
+    // const itemCount = await marketplace.itemCount();
+    // for (let indx = 1; indx <= itemCount; indx++) {
+    //   const i = await marketplace.items(indx);
+    //   if (i.seller.toLowerCase() === account) {
+    //     // get uri url from nft contract
+    //     const uri = await nft.tokenURI(i.tokenId);
+    //     // use uri to fetch the nft metadata stored on ipfs 
+    //     const response = await fetch(uri);
+    //     const metadata = await response.json();
+    //     // get total price of item (item price + fee)
+    //     const totalPrice = await marketplace.getTotalPrice(i.itemId);
+    //     // define listed item object
+    //     let item = {
+    //       totalPrice,
+    //       price: i.price,
+    //       itemId: i.itemId,
+    //       name: metadata.name,
+    //       description: metadata.description,
+    //       image: metadata.image
+    //     };
+    //     listedItems.push(item);
+    //     // Add listed item to sold items array if sold
+    //     if (i.sold) soldItems.push(item);
+    //   }
+    // }
+
+    // SOLUTION 2 - query Offered events with the seller set as the user
+    const filter = marketplace.filters.Offered(null, null, null, null, account);
+    const results = await marketplace.queryFilter(filter);
+    listedItems = await Promise.all(results.map(async i => {
+        i = i.args;
         const uri = await nft.tokenURI(i.tokenId);
-        // use uri to fetch the nft metadata stored on ipfs 
         const response = await fetch(uri);
         const metadata = await response.json();
-        // get total price of item (item price + fee)
         const totalPrice = await marketplace.getTotalPrice(i.itemId);
-        // define listed item object
-        let item = {
-          totalPrice,
-          price: i.price,
-          itemId: i.itemId,
-          name: metadata.name,
-          description: metadata.description,
-          image: metadata.image
+        const item = {
+            totalPrice,
+            price: i.price,
+            itemId: i.itemId,
+            name: metadata.name,
+            description: metadata.description,
+            image: metadata.image
         };
-        listedItems.push(item);
-        // Add listed item to sold items array if sold
-        if (i.sold) soldItems.push(item);
-      }
-    }
+        // sold property is not part of Offered event, so item needs to be fetched from the contract
+        const fullItemData = await marketplace.items(i.itemId);
+        if (fullItemData.sold) soldItems.push(item);
+        return item;
+    }));
+
     setLoading(false);
     setListedItems(listedItems);
     setSoldItems(soldItems);
